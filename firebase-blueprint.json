@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "An income or expense record in LAK and THB.",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the transaction (ວັນທີ)"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full name (ຊື່ແລະນາມສະກຸນ)"
+        },
+        "incomeLAK": {
+          "type": "number",
+          "description": "Income in Lao Kip (ລາຍຮັບກີບ)"
+        },
+        "incomeTHB": {
+          "type": "number",
+          "description": "Income in Thai Baht (ລາຍຮັບບາດ)"
+        },
+        "expenseLAK": {
+          "type": "number",
+          "description": "Expense in Lao Kip (ລາຍຈ່າຍກີບ)"
+        },
+        "expenseTHB": {
+          "type": "number",
+          "description": "Expense in Thai Baht (ລາຍຈ່າຍບາດ)"
+        },
+        "detailsLAK": {
+          "type": "string",
+          "description": "Details for LAK expense (ລາຍລະອຽດກີບ)"
+        },
+        "detailsTHB": {
+          "type": "string",
+          "description": "Details for THB expense (ລາຍລະອຽດບາດ)"
+        },
+        "note": {
+          "type": "string",
+          "description": "General note (ໝາຍເຫດ)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "The owner of this transaction"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "date",
+        "userId"
+      ]
+    }
+  },
+  "firestore": {
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User transactions for accounting"
+    }
+  }
+}

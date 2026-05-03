@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation helper for Transactions
+    function isValidTransaction(data) {
+      return data.userId == request.auth.uid
+        && data.date is string // Stored as ISO string for simplicity in rules or timestamp
+        && (data.get('fullName', '') is string && data.get('fullName', '').size() <= 200)
+        && (data.get('incomeLAK', 0) is number && data.get('incomeLAK', 0) >= 0)
+        && (data.get('incomeTHB', 0) is number && data.get('incomeTHB', 0) >= 0)
+        && (data.get('expenseLAK', 0) is number && data.get('expenseLAK', 0) >= 0)
+        && (data.get('expenseTHB', 0) is number && data.get('expenseTHB', 0) >= 0)
+        && (data.get('note', '') is string && data.get('note', '').size() <= 1000)
+        && (data.get('detailsLAK', '') is string && data.get('detailsLAK', '').size() <= 1000)
+        && (data.get('detailsTHB', '') is string && data.get('detailsTHB', '').size() <= 1000)
+        && data.keys().hasAll(['userId', 'date', 'createdAt', 'updatedAt']);
+    }
+
+    match /transactions/{transactionId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isOwner(resource.data.userId);
+      
+      allow create: if isSignedIn() 
+        && isValidTransaction(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().keys().size() <= 12; // Adjusted count
+
+      allow update: if isOwner(existing().userId)
+        && isValidTransaction(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'date', 'fullName', 'incomeLAK', 'incomeTHB', 
+            'expenseLAK', 'expenseTHB', 'note', 'detailsLAK', 'detailsTHB', 'updatedAt'
+          ])
+        );
+
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}
